@@ -1,0 +1,349 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>RPI Stream Manager</title>
+	</head>
+
+	<style>
+		div {
+			font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+		}
+
+		body {
+			margin: 0;
+			background: rgb(20, 20, 20);
+			color: white;
+		}
+		canvas {
+			image-rendering: pixelated;
+			background: #000;
+			width: 45%;
+			height: 45%;
+			margin: 5px 5px 10px 2%;
+			visibility: visible;
+		}
+
+		.flex
+		{
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.flex > div > input {
+			width: 80px;
+			margin: 5px 10px;
+			background-color: rgb(57, 57, 57);
+			color: white;
+		}
+
+		input[type="range"] {
+			-webkit-appearance: none;
+			appearance: none;
+			background: transparent;
+			cursor: pointer;
+			width: 500px;
+		}
+
+		input[type="range"]::-webkit-slider-runnable-track {
+			background: #303030;
+			height: 0.5rem;
+		}
+
+		input[type="range"]::-webkit-slider-thumb {
+			-webkit-appearance: none; /* Override default look */
+			appearance: none;
+			margin-top: -12px; /* Centers thumb on the track */
+			background-color: #8f8f8f;
+			height: 2rem;
+			width: 1rem;    
+		}
+
+	</style>
+
+	<body>
+		<div id="main">
+			<div id="options" style="margin: 15px 0px 20px 10px;">
+				<form class="flex">
+					<div style="margin: 10px 0px;">
+						<span>Hostname/Ip: </span>
+						<input id="ip" type="text" value="wpilibpi"><br>
+					</div>
+					<div style="margin: 10px 0px;">
+						<span>Starting Port: </span>
+						<input id="port1" type="number" value="1181"><br>
+					</div>
+					<div style="margin: 10px 0px;">
+						<span>Num Streams: </span>
+						<input id="streams" type="number" value="4" max="4" min="1"><br>
+					</div>
+					<div style="margin: 10px 0px;">
+						<span>Compression: </span>
+						<input id="compression" type="range" value="50"><br>
+					</div>
+				</form>
+			</div>
+			<div id="viewer" class="flex">
+				<canvas id="stream1">
+					Failed to load stream.
+				</canvas>
+				<canvas id="stream2">
+					Failed to load stream.
+				</canvas>
+				<canvas id="stream3">
+					Failed to load stream.
+				</canvas>
+				<canvas id="stream4">
+					Failed to load stream.
+				</canvas>
+				<!-- <details>
+					<summary>Raw Views</summary>
+					<span>1181-1184, compression=50:</span><br>
+					<img src="http://wpilibpi:1181/stream.mjpg:compression?50">
+					<img src="http://wpilibpi:1182/stream.mjpg:compression?50">
+					<img src="http://wpilibpi:1183/stream.mjpg:compression?50">
+					<img src="http://wpilibpi:1184/stream.mjpg:compression?50">
+				</details> -->
+			</div>
+		</div>
+	</body>
+
+	<script>
+		var MJPEG = (function(module) {
+			"use strict";
+
+			// class Stream { ...
+			module.Stream = function(args) {
+				var self = this;
+				var autoStart = args.autoStart || false;
+
+				self.url = args.url;
+				self.refreshRate = args.refreshRate || 100;
+				self.onStart = args.onStart || null;
+				self.onFrame = args.onFrame || null;
+				self.onStop = args.onStop || null;
+				self.callbacks = {};
+				self.running = false;
+				self.frameTimer = 0;
+
+				self.img = new Image();
+				if (autoStart) {
+					self.img.onload = self.start;
+				}
+				self.img.src = self.url;
+
+				function setRunning(running) {
+					self.running = running;
+					if (self.running) {
+						self.img.src = self.url;
+						self.frameTimer = setInterval(function() {
+							if (self.onFrame) {
+								self.onFrame(self.img);
+							}
+						}, self.refreshRate);
+						if (self.onStart) {
+							self.onStart();
+						}
+					} else {
+						self.img.src = "#";
+						clearInterval(self.frameTimer);
+						if (self.onStop) {
+							self.onStop();
+						}
+					}
+				}
+				self.updateUrl = function(url) {
+					self.stop();
+					self.url = url;
+					self.start();
+				}
+
+				self.start = function() { setRunning(true); }
+				self.stop = function() { setRunning(false); }
+			};
+
+			// class Player { ...
+			module.Player = function(canvas, url, options) {
+				var self = this;
+				if (typeof canvas === "string" || canvas instanceof String) {
+					canvas = document.getElementById(canvas);
+				}
+				var context = canvas.getContext("2d");
+				if (! options) {
+					options = {};
+				}
+				options.url = url;
+				options.onFrame = updateFrame;
+				options.onStart = function() { console.log("started"); }
+				options.onStop = function() { console.log("stopped"); }
+				;;;
+				self.stream = new module.Stream(options);
+				self.fscale = 1;
+
+				function scaleRect(srcSize, dstSize) {
+					var ratio = Math.min(dstSize.width / srcSize.width,
+										dstSize.height / srcSize.height);
+					var newRect = {
+						x: 0, y: 0,
+						width: srcSize.width * ratio,
+						height: srcSize.height * ratio
+					};
+					newRect.x = (dstSize.width/2) - (newRect.width/2);
+					newRect.y = (dstSize.height/2) - (newRect.height/2);
+					return newRect;
+				}
+
+				function updateFrame(img) {
+					var srcRect = {
+						x: 0, y: 0,
+						width: img.naturalWidth,
+						height: img.naturalHeight
+					};
+					// canvas.style.width = srcRect.width * self.fscale;
+					// canvas.style.height = srcRect.height * self.fscale;
+					var dstRect = scaleRect(srcRect, {
+						width: canvas.width,
+						height: canvas.height
+					});
+					try {
+						//context.globalAlpha = 0.5;
+						context.drawImage(img,
+							srcRect.x,
+							srcRect.y,
+							srcRect.width,
+							srcRect.height,
+							dstRect.x,
+							dstRect.y,
+							dstRect.width,
+							dstRect.height
+						);
+						// console.log(".");
+					} catch (e) {
+						// if we can't draw, don't bother updating anymore
+						self.stop();
+						console.log("!");
+					throw e;
+					}
+				}
+
+				self.updateFScale = function(fs) {
+					self.fscale = fs;
+				}
+
+				self.start = function() { self.stream.start(); }
+				self.stop = function() { self.stream.stop(); }
+			};
+
+			return module;
+
+		})(MJPEG || {});
+
+
+
+		const Elements = {
+			input_address :		document.getElementById("ip"),
+			input_startport :	document.getElementById("port1"),
+			input_num_streams :	document.getElementById("streams"),
+			input_compression :	document.getElementById("compression")
+		};
+		const State = {
+			address : "wpilibpi",
+			startport : 1181,
+			streams : 4,
+			compression : 50
+		};
+		Elements.input_address.addEventListener('input', function(e){ State.address = e.target.value; updateStreams(); });
+		Elements.input_startport.addEventListener('input', function(e){ State.startport = e.target.value; updateStreams(); });
+		Elements.input_num_streams.addEventListener('input', function(e){ State.streams = e.target.value; updateStreams(); });
+		Elements.input_compression.addEventListener('input', function(e){ State.compression = e.target.value; updateStreams(); });
+
+		function composeUrl(addr, port, compr, obj = "stream.mjpg") {
+			return `http://${addr}:${port}/${obj}?compression=${compr}`;
+		}
+
+		let options = { refreshRate : 20 };
+		const players = [];
+		const c = document.getElementsByTagName("canvas");
+		for(let i = 0; i < c.length; i++) {
+			players.push(new MJPEG.Player(c[i].getAttribute('id'), `http://wpilibpi:118${i + 1}/stream.mjpg`, options));
+			players[i].start();
+		}
+
+		function updateStreams() {
+			for(let i = 0; i < players.length; i++) {
+				players[i].stream.updateUrl(composeUrl(State.address, (State.startport + i), State.compression));
+			}
+			for(let i = 4; i>0; i--)
+			{
+				if(i>State.streams)
+				{
+					document.getElementById("stream"+i).style.visibility = "hidden";
+					players[i-1].stop();
+				}
+				else
+				{
+					document.getElementById("stream"+i).style.visibility = "visible";
+					players[i-1].start();
+				}
+			}
+			if(State.streams == 1)
+			{
+				document.getElementById("stream1").style.width = "90%";
+				document.getElementById("stream1").style.height = "90%";
+			}
+			else
+			{
+				document.getElementById("stream1").style.width = "45%";
+				document.getElementById("stream1").style.height = "45%";
+			}
+		}
+		var x; 
+		var width;
+		var height;
+		var clickedStreams = [];
+		document.getElementById("stream1").addEventListener('click', function(){clickCanvas(document.getElementById("stream1"));}, false);
+		document.getElementById("stream2").addEventListener('click', function(){clickCanvas(document.getElementById("stream2"));}, false);
+		document.getElementById("stream3").addEventListener('click', function(){clickCanvas(document.getElementById("stream3"));}, false);
+		document.getElementById("stream4").addEventListener('click', function(){clickCanvas(document.getElementById("stream4"));}, false);
+
+		function clickCanvas(element)
+		{ 	
+			x = element.getContext('2d');
+			width = x.canvas.width;
+			height = x.canvas.height;
+			console.log(clickedStreams);
+			for(let i = 0; i < clickedStreams.length; i++) 
+			{
+				if(clickedStreams[i] == element.getAttribute("id"))
+				{
+					players[element.getAttribute("id").substring(6)-1].start();
+					x.clearRect(0, 0, width, height);
+					clickedStreams.splice(i,1);
+					return;
+				}
+			}
+
+			// create offscreen buffer, 
+			buffer = document.createElement('canvas');
+			buffer.width = width;
+			buffer.height = height;
+			bx = buffer.getContext('2d');
+
+			// fill offscreen buffer with the tint color
+			bx.fillStyle = '#ADADAD'
+			bx.fillRect(0,0,buffer.width,buffer.height);
+
+			//then set the global alpha to the amound that you want to tint it, and draw the buffer directly on top of it.
+			x.globalAlpha = 0.5;
+			x.drawImage(buffer,0,0);
+			clickedStreams.push(element.getAttribute("id"));
+			players[element.getAttribute("id").substring(6)-1].stop();
+		}
+	</script>
+
+</html>

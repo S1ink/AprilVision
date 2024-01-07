@@ -1,0 +1,3 @@
+[submodule "VisionServer"]
+	path = VisionServer
+	url = https://github.com/S1ink/VisionServer

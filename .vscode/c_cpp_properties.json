@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "name": "CC-ARM-DESKTOP-8GI6FFU",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/VisionServer/lib-vs/include",
+                "${workspaceFolder}/VisionServer/lib-vs/additions",
+                "${workspaceFolder}/VisionServer/lib-vs/include/opencv4"
+            ],
+            "defines": [
+                "UNICODE",
+                "_UNICODE",
+                "__linux__",
+                "__unix__"
+            ],
+            "compilerPath": "D:\\Programs\\arm64-bullseye-2023-x86_64-w64-mingw32-Toolchain-10.2.0\\bullseye\\bin\\aarch64-bullseye-linux-gnu-g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "linux-gcc-arm",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
+        {
+            "name": "CC-ARM-LAPTOP",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/VisionServer/lib-vs/include",
+                "${workspaceFolder}/VisionServer/lib-vs/additions",
+                "${workspaceFolder}/VisionServer/lib-vs/include/opencv4"
+            ],
+            "defines": [
+                "UNICODE",
+                "_UNICODE",
+                "__linux__",
+                "__unix__"
+            ],
+            "compilerPath": "C:\\Packages\\bullseye\\bin\\aarch64-bullseye-linux-gnu-g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "linux-gcc-arm"
+        }
+    ],
+    "version": 4
+}
