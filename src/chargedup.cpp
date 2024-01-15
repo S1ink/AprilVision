@@ -393,8 +393,8 @@ static struct {
 
 
 	const cv::Ptr<cv::aruco::DetectorParameters> aprilp_params{ cv::aruco::DetectorParameters::create() };
-	const cv::Ptr<cv::aruco::Board> aprilp_field{ ::FIELD_2023 };
-	const std::array<frc::Pose3d, 8>& aprilp_field_poses{ ::TAG_POSES_2023 };
+	const cv::Ptr<cv::aruco::Board> aprilp_field{ ::FIELD_2024 };
+	const std::array<frc::Pose3d, 16>& aprilp_field_poses{ ::TAG_POSES_2024 };
 	struct {
 		std::thread april_worker, retro_worker;
 		std::atomic<int> april_link{0}, retro_link{0};

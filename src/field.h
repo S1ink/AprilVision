@@ -104,7 +104,7 @@ static inline cv::Ptr<cv::aruco::Board> const
 				cv::Point3f(179.915417437701,147.815,55.25),
 				cv::Point3f(185.544582562299,144.565,55.25),
 				cv::Point3f(185.544582562299,144.565,48.75),
-				cv::Point3f(179.915417437701,147.815,48.75
+				cv::Point3f(179.915417437701,147.815,48.75)
 			}
 		} },
 		cv::aruco::getPredefinedDictionary(FRC_DICT),
