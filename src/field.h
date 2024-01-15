@@ -9,7 +9,7 @@
 
 
 static inline constexpr float
-	TAG_SIDE_INCHES = 6.5f;		// 6.5 inner dimension, was previously 6.0 for 2023
+	TAG_SIDE_INCHES = 6.0f;		// 6.5 inner dimension, was previously 6.0 for 2023
 static inline const std::array<cv::Point3f, 4>
 	GENERIC_TAG_CORNERS{	// in camera coord system
 		cv::Point3f{ -TAG_SIDE_INCHES / 2.f, TAG_SIDE_INCHES / 2.f, 0.f },
@@ -104,7 +104,7 @@ static inline cv::Ptr<cv::aruco::Board> const
 				cv::Point3f(179.915417437701,147.815,55.25),
 				cv::Point3f(185.544582562299,144.565,55.25),
 				cv::Point3f(185.544582562299,144.565,48.75),
-				cv::Point3f(179.915417437701,147.815,48.75
+				cv::Point3f(179.915417437701,147.815,48.75)
 			}
 		} },
 		cv::aruco::getPredefinedDictionary(FRC_DICT),
