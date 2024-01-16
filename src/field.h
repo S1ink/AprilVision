@@ -21,8 +21,8 @@ static inline const std::array<cv::Point3f, 4>
 
 // 2024: https://firstfrc.blob.core.windows.net/frc2024/FieldAssets/2024LayoutMarkingDiagram.pdf (page 4)
 
-static inline cv::Ptr<cv::aruco::Board> const
-	FIELD_2024{ cv::aruco::Board::create(
+static inline cv::aruco::Board const
+	FIELD_2024{
 		// calculations and formatting: https://docs.google.com/spreadsheets/d/1obM2zp_ohWkl_-QUPi7S-PNwsVBvjXx0UC8woM7FiGU/edit?usp=sharing
 		std::vector<std::vector<cv::Point3f>>{ {
 			{
@@ -111,7 +111,7 @@ static inline cv::Ptr<cv::aruco::Board> const
 		std::array<int32_t, 16>{
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
 		}
-	) };
+	};
 
 static inline std::array<frc::Pose3d, 16> const
 	TAG_POSES_2024{
@@ -139,8 +139,8 @@ static inline std::array<frc::Pose3d, 16> const
 
 // 2023: https://firstfrc.blob.core.windows.net/frc2023/FieldAssets/2023LayoutMarkingDiagram.pdf (page 4)
 
-static inline cv::Ptr<cv::aruco::Board> const	// the frc 2023 field has 8 markers - source is linked above
-	FIELD_2023{ cv::aruco::Board::create(
+static inline cv::aruco::Board const	// the frc 2023 field has 8 markers - source is linked above
+	FIELD_2023{
 		// calculations and formatting: https://docs.google.com/spreadsheets/d/1c-rZgIMjbx5Ruouc-R8gldkDkMjAIx7uA9ZRElyW1K4/edit?usp=sharing
 		std::vector<std::vector<cv::Point3f>>{ {
 			{
@@ -189,7 +189,7 @@ static inline cv::Ptr<cv::aruco::Board> const	// the frc 2023 field has 8 marker
 		std::array<int32_t, 8>{
 			1, 2, 3, 4, 5, 6, 7, 8
 		}
-	) };
+	};
 
 static inline std::array<frc::Pose3d, 8> const
 	TAG_POSES_2023{
@@ -214,8 +214,8 @@ static inline std::array<frc::Pose3d, 8> const
 // https://docs.google.com/document/d/e/2PACX-1vQxVFxsY30_6sy50N8wWUpUhQ0qbUKnw7SjW6agbKQZ2X0SN_uXtNZhLB7AkRcJjLnlcmmjcyCNhn0I/pub
 // https://docs.google.com/document/d/e/2PACX-1vSizkGFRocq8-QLCj38O68MO4wYCThk_z60g7KhBLf497UqnLHcLW9r1HcTKzwI_SoYLHZp7wPnU6H4/pub
 
-static inline cv::Ptr<cv::aruco::Board> const	// the 2022 (unofficial) field has 24 markers - link to source above
-	FIELD_2022{ cv::aruco::Board::create(
+static inline cv::aruco::Board const	// the 2022 (unofficial) field has 24 markers - link to source above
+	FIELD_2022{
 		// calculations and formatting: https://docs.google.com/spreadsheets/d/1zpj37KxVP_r6md_0VjLPmQ9h4aVExXe4bx78hdGrro8/edit?usp=sharing
 		std::vector<std::vector<cv::Point3f>>{ {
 			{
@@ -347,4 +347,4 @@ static inline cv::Ptr<cv::aruco::Board> const	// the 2022 (unofficial) field has
 			40, 41, 42, 43,
 			50, 51, 52, 53
 		}
-	) };
+	};

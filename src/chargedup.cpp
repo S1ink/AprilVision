@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/aruco.hpp>
+#include <opencv2/objdetect.hpp>
 
 #include <fmt/format.h>
 
@@ -19,13 +19,14 @@
 #include <cscore_cpp.h>
 #include <wpi/json.h>
 #include <wpi/raw_ostream.h>
-#include <wpi/raw_istream.h>
+#include <wpi/MemoryBuffer.h>
 #include <wpi/StringExtras.h>
 #include <wpi/sendable/Sendable.h>
 #include <wpi/sendable/SendableBuilder.h>
-#include <frc/smartdashboard/SmartDashboard.h>
+#include <frc/EigenCore.h>
 #include <frc/geometry/Pose3d.h>
 #include <frc/apriltag/AprilTagFields.h>
+#include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTable.h>
 #include <networktables/IntegerTopic.h>
 #include <networktables/FloatArrayTopic.h>
@@ -33,6 +34,7 @@
 
 #include <core/neon.h>
 #include <core/calib.h>
+#include <core/config.h>
 #include <core/vision.h>
 
 #include <cpp-tools/src/sighandle.h>
@@ -392,9 +394,13 @@ static struct {
 	CS_Sink stream_h;
 
 
-	const cv::Ptr<cv::aruco::DetectorParameters> aprilp_params{ cv::aruco::DetectorParameters::create() };
-	const cv::Ptr<cv::aruco::Board> aprilp_field{ ::FIELD_2024 };
+	const cv::aruco::Board& aprilp_field{ ::FIELD_2024 };
 	const std::array<frc::Pose3d, 16>& aprilp_field_poses{ ::TAG_POSES_2024 };
+	const cv::aruco::ArucoDetector aprilp_detector{
+		aprilp_field.getDictionary(),
+		cv::aruco::DetectorParameters{},
+		cv::aruco::RefineParameters{}
+	};
 	struct {
 		std::thread april_worker, retro_worker;
 		std::atomic<int> april_link{0}, retro_link{0};
@@ -459,7 +465,7 @@ int main(int argc, char** argv) {
 		struct sigaction _action;
 		sigemptyset(&(_action.sa_mask));
 		_action.sa_flags = SA_SIGINFO;
-		_action.sa_sigaction = [&_global](int, siginfo_t*, void*){
+		_action.sa_sigaction = [](int, siginfo_t*, void*){
 			_global.state.program_enable = false;
 		};
 		sigaction((unsigned int)SigHandle::Sigs::INT, &_action, nullptr);
@@ -537,25 +543,25 @@ int main(int argc, char** argv) {
 
 
 
-bool loadJson(wpi::json& j, const char* file) {
-	std::error_code ec;
-	wpi::raw_fd_istream is(file, ec);
-	if (ec) {
-		wpi::errs() << "Could not open '" << file << "': " << ec.message() << newline;
-		return false;
-	}
-	try { j = wpi::json::parse(is); }
-	catch (const wpi::json::parse_error& e) {
-		wpi::errs() << "Failed to parse JSON for " << file << /*": byte " << (int)e.byte <<*/ ": " << e.what() << newline;
-		return false;
-	}
-	if (!j.is_object()) {
-		wpi::errs() << "JSON error in " << file << ": not a JSON object\n";
-		return false;
-	}
-	wpi::errs().flush();
-	return true;
-}
+// bool loadJson(wpi::json& j, const char* file) {
+// 	std::error_code ec;
+//     std::unique_ptr<wpi::MemoryBuffer> file_buffer = wpi::MemoryBuffer::GetFile(file, ec);
+//     if (file_buffer == nullptr || ec) {
+//         wpi::errs() << "Could not open '" << file << "': " << ec.message() << newline;
+//         return false;
+//     }
+//     try { j = wpi::json::parse(file_buffer->begin(), file_buffer->end()); }
+//     catch (const wpi::json::parse_error& e) {
+//         wpi::errs() << "Config error in " << file << /*": byte " << (int)e.byte <<*/ ": " << e.what() << newline;
+//         return false;
+//     }
+//     if (!j.is_object()) {
+//         wpi::errs() << "Config error in " << file << ": must be JSON object\n";
+//         return false;
+//     }
+// 	wpi::errs().flush();
+// 	return true;
+// }
 bool init(const char* fname) {
 
 	high_resolution_clock::time_point start = high_resolution_clock::now();
@@ -661,7 +667,7 @@ bool init(const char* fname) {
 			cthr.vpipe.nt_timings.Set({});
 
 			cthr.fin_h = cs::CreateCvSink(
-				fmt::format("{}_cv_in", name), &status);
+				fmt::format("{}_cv_in", name), static_cast<cs::VideoMode::PixelFormat>(cthr.vmode.pixelFormat), &status);
 			cthr.fout_h = cs::CreateCvSource(
 				fmt::format("{}_cv_out", name), cthr.vmode, &status);
 			cthr.view_h = cs::CreateMjpegServer(
@@ -742,7 +748,7 @@ bool init(const char* fname) {
 			cthr.vpipe.nt_timings.Set({});
 
 			cthr.fin_h = cs::CreateCvSink(
-				fmt::format("Camera{}_cv_in", cthr.vid), &status);
+				fmt::format("Camera{}_cv_in", cthr.vid), static_cast<cs::VideoMode::PixelFormat>(cthr.vmode.pixelFormat), &status);
 			cthr.fout_h = cs::CreateCvSource(
 				fmt::format("Camera{}_cv_out", cthr.vid), cthr.vmode, &status);
 			cthr.view_h = cs::CreateMjpegServer(
@@ -1158,11 +1164,9 @@ void _april_worker_inst(CThread& target, const cv::Mat* f) {
 	_buff.tag_ids.clear();
 
 	p = high_resolution_clock::now();
-	cv::aruco::detectMarkers(
+	_global.aprilp_detector.detectMarkers(
 		(f ? *f : target.vpipe.frame),
-		_global.aprilp_field->dictionary,
-		_buff.tag_corners, _buff.tag_ids,
-		_global.aprilp_params
+		_buff.tag_corners, _buff.tag_ids
 	);
 	_global.vpp.april_profiling[0] = duration<float>(high_resolution_clock::now() - p).count();
 
@@ -1174,9 +1178,12 @@ void _april_worker_inst(CThread& target, const cv::Mat* f) {
 
 		p = high_resolution_clock::now();
 		{
+			const std::vector<int>& _tag_ids = _global.aprilp_field.getIds();
+			const std::vector<std::vector<cv::Point3f>>& _tag_corners = _global.aprilp_field.getObjPoints();
+
 			if(detections == 1) {	// single tag
 				int id = _buff.tag_ids[0];
-				if(id > _global.aprilp_field->ids.size()) {}
+				if(id > _tag_ids.size()) {}		// TODO: might wanna deal with this!?
 
 				cv::solvePnPGeneric(
 					::GENERIC_TAG_CORNERS, _buff.tag_corners[0],
@@ -1207,17 +1214,17 @@ void _april_worker_inst(CThread& target, const cv::Mat* f) {
 				for(size_t i = 0; i < detections; i++) {
 
 					int id = _buff.tag_ids[i];
-					if(id > _global.aprilp_field->ids.size()) { continue; }
+					if(id > _global.aprilp_field.getIds().size()) { continue; }
 
 					std::vector<cv::Point2f>& itag_corners = _buff.tag_corners[i];
 					size_t iid;
-					for(iid = 0; iid < _global.aprilp_field->ids.size(); iid++) {
-						if(id == _global.aprilp_field->ids[iid]) {
+					for(iid = 0; iid < _tag_ids.size(); iid++) {
+						if(id == _tag_ids[iid]) {
 							_buff.tag_ids[i] = iid;	// replace with array index for tag id (normally is the same)
 #if MEGATAG_SOLVE_METHOD > -1
 							_buff.img_points.insert(_buff.img_points.end(), itag_corners.begin(), itag_corners.end());
 							for(int p = 0; p < 4; p++) {
-								_buff.obj_points.push_back(util::wpiToCv(_global.aprilp_field->objPoints[iid][p]));
+								_buff.obj_points.push_back(util::wpiToCv(_tag_corners[iid][p]));
 							}
 #endif
 							break;

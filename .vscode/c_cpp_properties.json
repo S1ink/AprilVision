@@ -14,7 +14,7 @@
                 "__linux__",
                 "__unix__"
             ],
-            "compilerPath": "D:\\Programs\\arm64-bullseye-2023-x86_64-w64-mingw32-Toolchain-10.2.0\\bullseye\\bin\\aarch64-bullseye-linux-gnu-g++.exe",
+            "compilerPath": "D:\\Programs\\arm64-bullseye-2024-x86_64-w64-mingw32-Toolchain-10.2.0\\bullseye\\bin\\aarch64-bullseye-linux-gnu-g++.exe",
             "cStandard": "c17",
             "cppStandard": "c++20",
             "intelliSenseMode": "linux-gcc-arm",
