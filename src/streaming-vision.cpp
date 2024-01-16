@@ -15,7 +15,7 @@
 #include <cscore_cpp.h>
 #include <wpi/json.h>
 #include <wpi/raw_ostream.h>
-#include <wpi/raw_istream.h>
+#include <wpi/MemoryBuffer.h>
 #include <wpi/StringExtras.h>
 #include <wpi/sendable/Sendable.h>
 #include <wpi/sendable/SendableBuilder.h>
@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
 		struct sigaction _action;
 		sigemptyset(&(_action.sa_mask));
 		_action.sa_flags = SA_SIGINFO;
-		_action.sa_sigaction = [&_global](int, siginfo_t*, void*){
+		_action.sa_sigaction = [](int, siginfo_t*, void*){
 			_global.state.program_enable = false;
 		};
 		sigaction((unsigned int)SigHandle::Sigs::INT, &_action, nullptr);
@@ -250,18 +250,18 @@ int main(int argc, char** argv) {
 
 bool loadJson(wpi::json& j, const char* file) {
 	std::error_code ec;
-    wpi::raw_fd_istream is(file, ec);
-    if (ec) {
+    std::unique_ptr<wpi::MemoryBuffer> file_buffer = wpi::MemoryBuffer::GetFile(file, ec);
+    if (file_buffer == nullptr || ec) {
         wpi::errs() << "Could not open '" << file << "': " << ec.message() << newline;
         return false;
     }
-    try { j = wpi::json::parse(is); }
+    try { j = wpi::json::parse(file_buffer->begin(), file_buffer->end()); }
     catch (const wpi::json::parse_error& e) {
-        wpi::errs() << "Failed to parse JSON for " << file << /*": byte " << (int)e.byte <<*/ ": " << e.what() << newline;
+        wpi::errs() << "Config error in " << file << /*": byte " << (int)e.byte <<*/ ": " << e.what() << newline;
         return false;
     }
     if (!j.is_object()) {
-        wpi::errs() << "JSON error in " << file << ": not a JSON object\n";
+        wpi::errs() << "Config error in " << file << ": must be JSON object\n";
         return false;
     }
 	wpi::errs().flush();
@@ -344,7 +344,7 @@ bool init(const char* fname) {
 			cs::SetCameraBrightness(cthr.camera_h, DEFAULT_BRIGHTNESS, &status);
 
 			cthr.fin_h = cs::CreateCvSink(
-				fmt::format("{}_cv_in", name), &status);
+				fmt::format("{}_cv_in", name), static_cast<cs::VideoMode::PixelFormat>(cthr.vmode.pixelFormat), &status);
 			cthr.fout_h = cs::CreateCvSource(
 				fmt::format("{}_cv_out", name), cthr.vmode, &status);
 			cthr.view_h = cs::CreateMjpegServer(
@@ -388,7 +388,7 @@ bool init(const char* fname) {
 			cs::SetCameraBrightness(cthr.camera_h, DEFAULT_BRIGHTNESS, &status);
 
 			cthr.fin_h = cs::CreateCvSink(
-				fmt::format("Camera{}_cv_in", cthr.vid), &status);
+				fmt::format("Camera{}_cv_in", cthr.vid), static_cast<cs::VideoMode::PixelFormat>(cthr.vmode.pixelFormat), &status);
 			cthr.fout_h = cs::CreateCvSource(
 				fmt::format("Camera{}_cv_out", cthr.vid), cthr.vmode, &status);
 			cthr.view_h = cs::CreateMjpegServer(
