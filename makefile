@@ -16,15 +16,15 @@ OBJ_DIR := obj
 OUT_DIR := out
 VS_DIR := VisionServer/lib-vs
 
-NAME := charged-up-vision
+NAME := apriltag-vision
 VISION := $(OUT_DIR)/$(NAME)
 STREAMING := $(OUT_DIR)/$(NAME)-raw
 VISIONSERVER := $(VS_DIR)/out/libvs3407.so
 PACKAGE_DEPS := $(VS_DIR)/lib/libtensorflowlite.so $(VS_DIR)/lib/libedgetpu.so $(VISIONSERVER)
 
 # SRCS := $(call rwildcard,$(SRC_DIR)/,*.cpp *.c *.S *.s)
-VISION_SRCS := src/chargedup.cpp
-STREAMING_SRCS := src/chargedup-raw.cpp
+VISION_SRCS := src/apriltag-vision.cpp
+STREAMING_SRCS := src/streaming.cpp
 VISION_OBJS := $(VISION_SRCS:$(SRC_DIR)/%=$(OBJ_DIR)/%.o)
 STREAMING_OBJS := $(STREAMING_SRCS:$(SRC_DIR)/%=$(OBJ_DIR)/%.o)
 

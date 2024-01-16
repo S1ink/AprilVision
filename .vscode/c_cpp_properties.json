@@ -5,8 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/VisionServer/lib-vs/include",
-                "${workspaceFolder}/VisionServer/lib-vs/additions",
-                "${workspaceFolder}/VisionServer/lib-vs/include/opencv4"
+                "${workspaceFolder}/VisionServer/lib-vs/additions"
             ],
             "defines": [
                 "UNICODE",
@@ -25,8 +24,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/VisionServer/lib-vs/include",
-                "${workspaceFolder}/VisionServer/lib-vs/additions",
-                "${workspaceFolder}/VisionServer/lib-vs/include/opencv4"
+                "${workspaceFolder}/VisionServer/lib-vs/additions"
             ],
             "defines": [
                 "UNICODE",
